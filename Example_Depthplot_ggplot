@@ -1,0 +1,49 @@
+# Library
+```{r}
+library(ggplot2)
+```
+
+# Load data 
+```{r}
+myFiles <- list.files(pattern="*bam_all_depth.txt")
+```
+
+# Reading a creating table
+```{r}
+## reading first file
+AllDepth<- read.table(myFiles[1],header=FALSE, sep="\t", na.strings="NA", dec=".", strip.white=TRUE,stringsAsFactors=FALSE)
+colnames(AllDepth)<-c("scaffold", "position", "depth")
+#seq name
+one_seqname<-strsplit(myFiles[1],"_")[[1]][1]
+#changes name
+AllDepth$sample<-one_seqname
+AllDepth$scaffold<- unlist(lapply(strsplit(AllDepth$scaffold[], "_"), `[[`, 1))
+  
+for (i in 2:length(myFiles)){
+  #seq name
+  one_seqname<-strsplit(myFiles[i],"_")[[1]][1]
+  
+  # read and rename table 
+  temporal_data <- read.table(myFiles[i],header=FALSE, sep="\t", na.strings="NA", dec=".", strip.white=TRUE,stringsAsFactors=FALSE)
+  colnames(temporal_data)<-c("scaffold", "position", "depth")
+  temporal_data$sample<- one_seqname
+  temporal_data$scaffold<- unlist(lapply(strsplit(temporal_data$scaffold[], "_"), `[[`, 1))
+
+  AllDepth<- rbind(AllDepth,temporal_data) 
+}  
+
+```
+
+# Density ggplot by effector
+
+```{r}
+
+effectorNames<- unique(AllDepth$scaffold)
+
+for (i in 1: length(effectorNames)){
+  p<-ggplot(data=AllDepth[AllDepth$scaffold==effectorNames[i],], aes(x=position, y=depth, group=sample, color=sample)) + geom_line(size=0.15)+geom_point(size=0.15)+ theme(legend.key.size = unit(0.5, "cm")) + ggtitle(paste0("Depth of coverage ",effectorNames[i]))
+  #+scale_y_continuous(limits = c(0, 100))
+  print(p)
+}
+
+```
